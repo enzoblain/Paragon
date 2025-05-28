@@ -9,14 +9,19 @@ use std::sync::Arc;
 
 // Here we're using DashMap to allow concurrent access to the candles
 // Because we are sure that we won't use the same key in multiple threads
+// Currently, candles are stored using keys in the format "symbol-timerange".
+// However, we should explore alternatives to group timeranges under each symbol
+// without sacrificing performance or concurrency.
 static CANDLES: Lazy<Arc<DashMap<String, Arc<Candle>>>> = Lazy::new(|| {
     Arc::new(DashMap::new())
 });
 
 // Aggregates a 1-minute candle into its corresponding higher timeframe candle (5m, 15m, etc.).
-pub async fn aggregate_candle(candle: Arc<Candle>, timerange: &Timerange) -> Result<(), String> {
+pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Timerange) -> Result<(), String> {
+    let key = format!("{}-{}", symbol, timerange.label);
+
     let last_candle = CANDLES
-        .get(timerange.label)
+        .get(key.as_str())
         .map(|c| Arc::clone(c.value()));
 
     let new_candle;
@@ -54,7 +59,7 @@ pub async fn aggregate_candle(candle: Arc<Candle>, timerange: &Timerange) -> Res
 
     // Insert or update the candle in the DashMap
     CANDLES
-        .entry(timerange.label.to_string())
+        .entry(key)
         .and_modify(|c| *c = Arc::clone(&new_candle))
         .or_insert_with(|| Arc::clone(&new_candle));
 

@@ -24,7 +24,7 @@ async fn main() -> Result<(), String> {
         for timerange in TIMERANGES.iter() {
             let cloned_candle = Arc::clone(&candle);
             let task = tokio::spawn(async move {
-                aggregate_candle(cloned_candle, timerange).await
+                aggregate_candle(cloned_candle, "EURUSD", timerange).await
             });
 
             handles.push(task);
