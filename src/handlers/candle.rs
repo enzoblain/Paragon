@@ -4,6 +4,7 @@ use crate::{
     Timerange,
 };
 
+use chrono::{Utc, TimeZone};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use std::sync::Arc;
@@ -31,7 +32,7 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
     // If there is no last candle, we create a new one
     // If there is a last candle, we check if the new candle is in the same timerange 
     if let Some(last_candle) = last_candle {
-        if last_candle.timestamp + chrono::Duration::milliseconds(timerange.duration_ms as i64) < candle.timestamp {
+        if last_candle.timestamp + chrono::Duration::milliseconds(timerange.duration_ms as i64) <= candle.timestamp {
             // Send the candle to the db and check for errors
             if let Err(e) = add_candle(&last_candle).await {
                 println!("Failed to add candle to database: {}", e);
@@ -40,6 +41,10 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
             // Update the dashmap with the new candle (change the timerange)
             let mut modified_candle = (*candle).clone();
             modified_candle.timerange = timerange.label.to_string();
+
+            // Adjust the open price to match the timerange,
+            // So for example the open 
+            modified_candle.timestamp = Utc.timestamp_millis_opt((modified_candle.timestamp.timestamp_millis() / timerange.duration_ms as i64) * timerange.duration_ms as i64).single().expect("Failed to adjust timestamp");
 
             new_candle = Arc::new(modified_candle);
         } else {
@@ -59,6 +64,9 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
         // Don't forget to change the timerange of the candle
         let mut candle = (*candle).clone();
         candle.timerange = timerange.label.to_string();
+        // And adjust the timestamp to match the timerange
+        // This is done by rounding the timestamp to the nearest timerange duration
+        candle.timestamp = Utc.timestamp_millis_opt((candle.timestamp.timestamp_millis() / timerange.duration_ms as i64) * timerange.duration_ms as i64).single().expect("Failed to adjust timestamp");
 
         new_candle = Arc::new(candle);
     }
