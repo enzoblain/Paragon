@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Candle {
     pub symbol: String,
     pub timerange: String,

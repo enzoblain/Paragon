@@ -1,5 +1,6 @@
 use crate::{
     Candle,
+    connections::database::add_candle,
     Timerange,
 };
 
@@ -12,7 +13,7 @@ use std::sync::Arc;
 // Currently, candles are stored using keys in the format "symbol-timerange".
 // However, we should explore alternatives to group timeranges under each symbol
 // without sacrificing performance or concurrency.
-static CANDLES: Lazy<Arc<DashMap<String, Arc<Candle>>>> = Lazy::new(|| {
+pub static CANDLES: Lazy<Arc<DashMap<String, Arc<Candle>>>> = Lazy::new(|| {
     Arc::new(DashMap::new())
 });
 
@@ -30,8 +31,11 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
     // If there is no last candle, we create a new one
     // If there is a last candle, we check if the new candle is in the same timerange 
     if let Some(last_candle) = last_candle {
-        if last_candle.timestamp + chrono::Duration::milliseconds(timerange.duration_ms as i64) > candle.timestamp {
-            // TODO: Save the updated candle to the database for storage and analysis.
+        if last_candle.timestamp + chrono::Duration::milliseconds(timerange.duration_ms as i64) < candle.timestamp {
+            // Send the candle to the db and check for errors
+            if let Err(e) = add_candle(&last_candle).await {
+                println!("Failed to add candle to database: {}", e);
+            }
 
             // Update the dashmap with the new candle (change the timerange)
             let mut modified_candle = (*candle).clone();
@@ -52,10 +56,14 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
             new_candle = Arc::new(modified_candle);
         }
     } else {
-        new_candle = candle;
+        // Don't forget to change the timerange of the candle
+        let mut candle = (*candle).clone();
+        candle.timerange = timerange.label.to_string();
+
+        new_candle = Arc::new(candle);
     }
 
-    // TODO: Send the candlese via websocket to the clients
+    // TODO: Send the candle via websocket to the clients
 
     // Insert or update the candle in the DashMap
     CANDLES

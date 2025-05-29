@@ -1,3 +1,4 @@
+pub mod connections;
 pub mod handlers;
 pub mod entities;
 pub mod utils;

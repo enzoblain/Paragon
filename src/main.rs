@@ -1,7 +1,8 @@
 use paragon::{
+    connections::database::connect_db,
     handlers::candle::aggregate_candle,
     TIMERANGES,
-    utils::temporary
+    utils::temporary,
 };
 
 use futures::future::join_all;
@@ -9,6 +10,9 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
+    // Connect to the database
+    connect_db().await.map_err(|e| e.to_string())?;
+
     // Load the data
     let data = temporary::get_data().map_err(|e| e.to_string())?;
 
@@ -31,7 +35,7 @@ async fn main() -> Result<(), String> {
         }
 
         // Wait for all tasks to complete
-        let _ = join_all(handles).await;
+        let _ = join_all(handles).await; 
     }
 
     Ok(())
