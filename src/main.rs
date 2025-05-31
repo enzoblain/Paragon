@@ -1,5 +1,5 @@
 use paragon::{
-    connections::database::connect_db,
+    connections::database::init_pool,
     handlers::candle::aggregate_candle,
     TIMERANGES,
     utils::temporary,
@@ -10,8 +10,8 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-    // Connect to the database
-    connect_db().await.map_err(|e| e.to_string())?;
+    // Create the database connection pool
+    init_pool().await?;
 
     // Load the data
     let data = temporary::get_data().map_err(|e| e.to_string())?;
