@@ -1,1 +1,41 @@
-/target
+# Build output
+/target/
+
+# Lock file for dependencies
+Cargo.lock
+
+# Editor backup and temporary files
+**/*.rs.bk
+**/*.swp
+**/*~
+
+# Cargo metadata
+/.cargo/
+/*.crate
+
+# Log files
+*.log
+
+# Test and benchmark output
+/results/
+benches/**/*.log
+
+# Code coverage output
+/coverage/
+**/tarpaulin-report.*
+
+# Auxiliary build scripts
+build.rs
+
+# IDE and editor folders
+.idea/
+.vscode/
+*.code-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Other caches or artifacts
+debug/
+release/

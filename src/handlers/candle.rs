@@ -1,12 +1,16 @@
 use crate::{
     Candle,
-    connections::database::add_candle,
+    connections::{
+        database::add_candle,
+        websocket::send_message_to_clients,
+    },
     Timerange,
 };
 
 use chrono::{Utc, TimeZone};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
+use serde_json::{Map, Value};
 use std::sync::Arc;
 
 // Here we're using DashMap to allow concurrent access to the candles
@@ -19,7 +23,7 @@ pub static CANDLES: Lazy<Arc<DashMap<String, Arc<Candle>>>> = Lazy::new(|| {
 });
 
 // Aggregates a 1-minute candle into its corresponding higher timeframe candle (5m, 15m, etc.).
-pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Timerange) -> Result<(), String> {
+pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Timerange) {
     let key = format!("{}-{}", symbol, timerange.label);
 
     let last_candle = CANDLES
@@ -35,7 +39,12 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
         if last_candle.timestamp + chrono::Duration::milliseconds(timerange.duration_ms as i64) <= candle.timestamp {
             // Send the candle to the db and check for errors
             if let Err(e) = add_candle(&last_candle).await {
-                println!("Failed to add candle to database: {}", e);
+                eprintln!("Failed to add candle to database: {}", e);
+            }
+
+            // Send the candle to the websocket
+            if let Err(e) = send_candle(&last_candle).await {
+                eprintln!("Failed to send candle to websocket: {}", e);
             }
 
             // Update the dashmap with the new candle (change the timerange)
@@ -71,13 +80,32 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
         new_candle = Arc::new(candle);
     }
 
-    // TODO: Send the candle via websocket to the clients
+    // Send the candle to the websocket
+    if let Err(e) = send_candle(&new_candle).await {
+        eprintln!("Failed to send candle to websocket: {}", e);
+    }
 
     // Insert or update the candle in the DashMap
     CANDLES
         .entry(key)
         .and_modify(|c| *c = Arc::clone(&new_candle))
         .or_insert_with(|| Arc::clone(&new_candle));
+}
+
+// Sends a candle to the connected WebSocket clients.
+// By converting the candle to a JSON string, we can send it over the WebSocket connection.
+pub async fn send_candle(candle: &Candle) -> Result<(), String> {
+    let mut data = Map::new();
+
+    // Structure the data to send
+    data.insert("type".to_string(), Value::String("candle".to_string()));
+    data.insert("value".to_string(), serde_json::to_value(candle).unwrap());
+
+    // Convert the data to a JSON string
+    let json_data = Value::Object(data).to_string();
+
+    // Send the data to the clients
+    send_message_to_clients(&json_data).await?;
 
     Ok(())
 }
