@@ -50,15 +50,20 @@ pub async fn processfairvaluegap(candle: Arc<Candle>, symbol: &str, timerange: &
             }
         }
 
+        // Store high and low for the fair value gap
+        // So we know if we have found one
         let mut high: Option<f64> = None;
         let mut low: Option<f64> = None;
 
+        // If we have a direction, we can check for fair value gaps
         if let Some(direction) = direction.clone() {
+            // If it's bullish, we have to find a hole between the first candle shadow and the third candle body
             if direction == "bullish".to_string() {
                 if last_candles[0].high < last_candles[2].low {
                     high = Some(last_candles[0].high);
                     low = Some(last_candles[2].low);
                 }
+            // If it's bearish, we have to find a hole between the first candle body and the third candle shadow
             } else if direction == "bearish".to_string() {
                 if last_candles[0].low > last_candles[2].high {
                     high = Some(last_candles[2].high);
@@ -67,6 +72,8 @@ pub async fn processfairvaluegap(candle: Arc<Candle>, symbol: &str, timerange: &
             }
         }
 
+        // If we have found a fair value gap, we create a TwoDStructures entity
+        // And we add it to the database
         if let (Some(high), Some(low)) = (high, low) {
             let fair_value_gap = TwoDStructures {
                 structure: "Fair Value Gap".to_string(),
@@ -78,6 +85,8 @@ pub async fn processfairvaluegap(candle: Arc<Candle>, symbol: &str, timerange: &
             };
 
             add_2_d_structures(&fair_value_gap).await?;
+
+            // TODO: Send the fair value gap to the websocket
         }
 
         return Ok(());
