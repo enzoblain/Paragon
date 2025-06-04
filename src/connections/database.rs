@@ -1,4 +1,4 @@
-use crate::{Candle, Session};
+use crate::{Candle, entities::two_d_structures::TwoDStructures, Session};
 
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use once_cell::sync::OnceCell;
@@ -67,3 +67,20 @@ pub async fn add_session(session: &Session) -> Result<(), String> {
 
     Ok(())
 }
+
+pub async fn add_2_d_structures(structure: &TwoDStructures) -> Result<(), String> {
+    let client = get_db_client().await?;
+
+    let query = "INSERT INTO two_d_structures (structure, timerange, timestamp, high, low, direction) VALUES ($1, $2, $3, $4, $5, $6)";
+    
+    client.query(query, &[
+        &structure.structure,
+        &structure.timerange,
+        &structure.timestamp,
+        &structure.high,
+        &structure.low,
+        &structure.direction
+    ]).await.map_err(|e| format!("Failed to insert 2D structure into database: {}", e))?;
+
+    Ok(())
+} 

@@ -4,3 +4,4 @@
 pub mod candle;
 pub mod session;
 pub mod timerange;
+pub mod two_d_structures;

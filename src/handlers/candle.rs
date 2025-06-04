@@ -4,6 +4,7 @@ use crate::{
         database::add_candle,
         websocket::send_message_to_clients,
     },
+    handlers::two_d_structures::processfairvaluegap,
     Timerange,
 };
 
@@ -45,6 +46,11 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
             // Send the candle to the websocket
             if let Err(e) = send_candle(&last_candle).await {
                 eprintln!("Failed to send candle to websocket: {}", e);
+            }
+
+            // Search for fair value gaps
+            if let Err(e) = processfairvaluegap(Arc::clone(&last_candle), symbol, timerange).await {
+                eprintln!("Failed to process fair value gap: {}", e);
             }
 
             // Update the dashmap with the new candle (change the timerange)
