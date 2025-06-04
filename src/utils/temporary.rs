@@ -56,14 +56,15 @@ pub fn parse_candle(row: Row) -> Result<Candle, String> {
         Err("Invalid 'volume' value in row: {row}")?
     };
 
-    Ok(Candle {
-        symbol: "EURUSD".to_string(), // EUR/USD is the only symbol in the data
-        timerange: "1m".to_string(),  // 1 minute is the only timerange in the data
-        timestamp: datetime,
+
+    Ok(Candle::new(
+        "EURUSD".to_string(), // EUR/USD is the only symbol in the data
+        "1m".to_string(),  // 1 minute is the only timerange in the data
+        datetime,
         open,
         high,
         low,
         close,
-        volume: volume as f64,
-    })
+        volume as f64, // Convert i64 to f64 for volume
+    ))
 }

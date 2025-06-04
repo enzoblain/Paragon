@@ -14,6 +14,7 @@ CREATE TABLE candles (
     close DOUBLE PRECISION NOT NULL,       -- Closing price of the candle
     low DOUBLE PRECISION NOT NULL,         -- Lowest price during the candle
     volume DOUBLE PRECISION NOT NULL,      -- Trading volume during the candle
+    direction TEXT NOT NULL,               -- Direction of the candle (bullish or bearish)
     UNIQUE(symbol, timerange, timestamp)   -- Ensure unique entries for each symbol, timerange, and timestamp
 );
 

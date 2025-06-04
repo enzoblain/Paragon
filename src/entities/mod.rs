@@ -2,4 +2,5 @@
 // for easy access and reuse throughout the codebase.
 
 pub mod candle;
+pub mod session;
 pub mod timerange;

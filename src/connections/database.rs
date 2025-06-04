@@ -1,4 +1,4 @@
-use crate::Candle;
+use crate::{Candle, Session};
 
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use once_cell::sync::OnceCell;
@@ -32,7 +32,7 @@ pub async fn get_db_client() -> Result<deadpool_postgres::Client, String> {
 pub async fn add_candle(candle: &Candle) -> Result<(), String> {
     let client = get_db_client().await?;
 
-    let query = "INSERT INTO candles (symbol, timerange, timestamp, open, high, low, close, volume) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+    let query = "INSERT INTO candles (symbol, timerange, timestamp, open, high, low, close, volume, direction) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
     
     client.query(query, &[
         &candle.symbol,
@@ -43,7 +43,27 @@ pub async fn add_candle(candle: &Candle) -> Result<(), String> {
         &candle.low,
         &candle.close,
         &candle.volume,
+        &candle.direction
     ]).await.map_err(|e| format!("Failed to insert candle into database: {}", e))?;
+
+    Ok(())
+}
+
+pub async fn add_session(session: &Session) -> Result<(), String> {
+    let client = get_db_client().await?;
+
+    let query = "INSERT INTO sessions (label, start_time, end_time, high, low, open, close, volume) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+    
+    client.query(query, &[
+        &session.label,
+        &session.start,
+        &session.end,
+        &session.high,
+        &session.low,
+        &session.open,
+        &session.close,
+        &session.volume
+    ]).await.map_err(|e| format!("Failed to insert session into database: {}", e))?;
 
     Ok(())
 }

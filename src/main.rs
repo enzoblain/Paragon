@@ -3,7 +3,10 @@ use paragon::{
         database::init_pool,
         websocket::create_intra_websocket,
     },
-    handlers::candle::aggregate_candle,
+    handlers::{
+        candle::aggregate_candle,
+        sessions::process_session
+    },
     TIMERANGES,
     utils::temporary,
 };
@@ -21,8 +24,6 @@ async fn main() -> Result<(), String> {
 
     // Spawn the main tasj
     let main_task = tokio::spawn(async move {   
-        print!("Starting Paragon...\n");
-
         // Create the database connection pool
         init_pool().await
             .map_err(|e| format!("Database connection error: {}", e))?;
@@ -39,6 +40,7 @@ async fn main() -> Result<(), String> {
 
             // Spawn a task for each timerange to aggregate the candle
             let mut handles = Vec::new();
+
             for timerange in TIMERANGES.iter() {
                 let cloned_candle = Arc::clone(&candle);
                 let task = tokio::spawn(async move {
@@ -47,6 +49,15 @@ async fn main() -> Result<(), String> {
 
                 handles.push(task);
             }
+
+            // And also spawn a task to process the session
+            let cloned_candle = Arc::clone(&candle);
+            let task = tokio::spawn(async move {
+                if let Err(e) = process_session(cloned_candle).await {
+                    eprintln!("Error processing session: {}", e);
+                }
+            });
+            handles.push(task);
 
             // Wait for all tasks to complete
             let _ = join_all(handles).await; 
