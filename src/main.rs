@@ -16,6 +16,21 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
+    #[cfg(feature = "perf")] {
+        // If the perf feature is enabled, we set the perf flag to true
+        // So we can get the average time per candle
+        // This is useful for performance testing
+        println!("Running in performance mode");
+        run_main(true).await
+    }
+
+    #[cfg(not(feature = "perf"))] {
+        // If the perf feature is not enabled, we set the perf flag to false
+        run_main(false).await
+    }
+}
+
+async fn run_main(perf: bool) -> Result<(), String> {
     // Initialize the websocket server
     let intra_websocket = tokio::spawn(async move{
         create_intra_websocket().await
@@ -29,7 +44,13 @@ async fn main() -> Result<(), String> {
             .map_err(|e| format!("Database connection error: {}", e))?;
 
         // Load the data
-        let data = temporary::get_data().map_err(|e| e.to_string())?;
+        let mut data = temporary::get_data().map_err(|e| e.to_string())?;
+
+        if perf {
+            data = data.head(Some(100_000));
+        }
+
+        let start = std::time::Instant::now();
 
         // Iterate over each row in the data
         for index in 0..data.height() {
@@ -61,6 +82,12 @@ async fn main() -> Result<(), String> {
 
             // Wait for all tasks to complete
             let _ = join_all(handles).await; 
+        }
+
+        if perf {
+            println!("Average time per candle: {} microseconds", 
+                start.elapsed().as_micros() / data.height() as u128
+            );
         }
 
         Ok::<(), String>(())
