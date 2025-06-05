@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 // Store the current session in a global state
 pub static SESSION: Lazy<Mutex<Option<Session>>> = Lazy::new(|| Mutex::new(None));
 
-pub async fn process_session(candle: Arc<Candle>) -> Result<(), String> {
+pub async fn process_session(candle: Arc<Candle>, symbol: &'static str) -> Result<(), String> {
     // Check if the session is not initialized 
     // or if the current session is not the same as the candle's session
     // This prevent locking for too long
@@ -24,6 +24,7 @@ pub async fn process_session(candle: Arc<Candle>) -> Result<(), String> {
 
         // Create a new session
         let new_session = Session {
+            symbol: symbol,
             label: session.label,
             start,
             end,

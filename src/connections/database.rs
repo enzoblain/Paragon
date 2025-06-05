@@ -1,4 +1,4 @@
-use crate::{Candle, entities::two_d_structures::TwoDStructures, Session};
+use crate::{Candle, entities::structures::TwoDStructures, Session};
 
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use once_cell::sync::OnceCell;
@@ -52,9 +52,10 @@ pub async fn add_candle(candle: &Candle) -> Result<(), String> {
 pub async fn add_session(session: &Session) -> Result<(), String> {
     let client = get_db_client().await?;
 
-    let query = "INSERT INTO sessions (label, start_time, end_time, high, low, open, close, volume) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+    let query = "INSERT INTO sessions (symbol, label, start_time, end_time, high, low, open, close, volume) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
     
     client.query(query, &[
+        &session.symbol,
         &session.label,
         &session.start,
         &session.end,
@@ -71,9 +72,10 @@ pub async fn add_session(session: &Session) -> Result<(), String> {
 pub async fn add_2_d_structures(structure: &TwoDStructures) -> Result<(), String> {
     let client = get_db_client().await?;
 
-    let query = "INSERT INTO two_d_structures (structure, timerange, timestamp, high, low, direction) VALUES ($1, $2, $3, $4, $5, $6)";
+    let query = "INSERT INTO two_d_structures (symbol, structure, timerange, timestamp, high, low, direction) VALUES ($1, $2, $3, $4, $5, $6, $7)";
     
     client.query(query, &[
+        &structure.symbol,
         &structure.structure,
         &structure.timerange,
         &structure.timestamp,

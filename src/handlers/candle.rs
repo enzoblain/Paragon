@@ -4,14 +4,14 @@ use crate::{
         database::add_candle,
         websocket::send_message_to_clients,
     },
-    handlers::two_d_structures::processfairvaluegap,
+    handlers::structures::processfairvaluegap,
     Timerange,
 };
 
 use chrono::{Utc, TimeZone};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
-use serde_json::{Map, Value};
+use serde_json::{Map, to_value, Value};
 use std::sync::Arc;
 
 // Here we're using DashMap to allow concurrent access to the candles
@@ -24,7 +24,7 @@ pub static CANDLES: Lazy<Arc<DashMap<String, Arc<Candle>>>> = Lazy::new(|| {
 });
 
 // Aggregates a 1-minute candle into its corresponding higher timeframe candle (5m, 15m, etc.).
-pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Timerange) {
+pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &'static str, timerange: &Timerange) {
     let key = format!("{}-{}", symbol, timerange.label);
 
     let last_candle = CANDLES
@@ -55,7 +55,7 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
 
             // Update the dashmap with the new candle (change the timerange)
             let mut modified_candle = (*candle).clone();
-            modified_candle.timerange = timerange.label.to_string();
+            modified_candle.timerange = timerange.label;
 
             // Adjust the open price to match the timerange,
             // So for example the open 
@@ -78,7 +78,7 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &str, timerange: &Tim
     } else {
         // Don't forget to change the timerange of the candle
         let mut candle = (*candle).clone();
-        candle.timerange = timerange.label.to_string();
+        candle.timerange = timerange.label;
         // And adjust the timestamp to match the timerange
         // This is done by rounding the timestamp to the nearest timerange duration
         candle.timestamp = Utc.timestamp_millis_opt((candle.timestamp.timestamp_millis() / timerange.duration_ms as i64) * timerange.duration_ms as i64).single().expect("Failed to adjust timestamp");
@@ -105,7 +105,7 @@ pub async fn send_candle(candle: &Candle) -> Result<(), String> {
 
     // Structure the data to send
     data.insert("type".to_string(), Value::String("candle".to_string()));
-    data.insert("value".to_string(), serde_json::to_value(candle).unwrap());
+    data.insert("value".to_string(), to_value(candle).unwrap());
 
     // Convert the data to a JSON string
     let json_data = Value::Object(data).to_string();

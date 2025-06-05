@@ -58,8 +58,8 @@ pub fn parse_candle(row: Row) -> Result<Candle, String> {
 
 
     Ok(Candle::new(
-        "EURUSD".to_string(), // EUR/USD is the only symbol in the data
-        "1m".to_string(),  // 1 minute is the only timerange in the data
+        "EURUSD", // EUR/USD is the only symbol in the data
+        "1m",  // 1 minute is the only timerange in the data
         datetime,
         open,
         high,

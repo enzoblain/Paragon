@@ -3,19 +3,19 @@ use serde::Serialize;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Candle {
-    pub symbol: String,
-    pub timerange: String,
+    pub symbol: &'static str,
+    pub timerange: &'static str,
     pub timestamp: DateTime<Utc>,
     pub open: f64,
     pub high: f64,
     pub low: f64,
     pub close: f64,
     pub volume: f64,
-    pub direction: String,
+    pub direction: &'static str,
 }
 
 impl Candle {
-    pub fn new(symbol: String, timerange: String, timestamp: DateTime<Utc>, open: f64, high: f64, low: f64, close: f64, volume: f64,
+    pub fn new(symbol: &'static str, timerange: &'static str, timestamp: DateTime<Utc>, open: f64, high: f64, low: f64, close: f64, volume: f64,
     ) -> Self {
         Candle {
             symbol,
@@ -31,12 +31,12 @@ impl Candle {
     }
 }
 
-pub fn get_direction(open: f64, close: f64) -> String {
+pub fn get_direction(open: f64, close: f64) -> &'static str {
     if close > open {
-        "bullish".to_string()
+        "bullish"
     } else if close < open {
-        "bearish".to_string()
+        "bearish"
     } else {
-        "doji".to_string()
+        "doji"
     }
 }

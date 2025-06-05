@@ -3,6 +3,7 @@
 
 CREATE TABLE two_d_structures (
     id SERIAL PRIMARY KEY,                   -- Unique auto-increment identifier
+    symbol TEXT NOT NULL,                   -- Trading symbol (e.g., EURUSD)
     structure TEXT NOT NULL,                 -- Name/type of the structure (e.g., FVG)
     timerange TEXT NOT NULL,                 -- Time range label
     timestamp TIMESTAMPTZ NOT NULL,          -- Precise UTC timestamp of the structure

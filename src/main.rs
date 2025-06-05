@@ -53,7 +53,7 @@ async fn main() -> Result<(), String> {
             // And also spawn a task to process the session
             let cloned_candle = Arc::clone(&candle);
             let task = tokio::spawn(async move {
-                if let Err(e) = process_session(cloned_candle).await {
+                if let Err(e) = process_session(cloned_candle, "EURUSD").await {
                     eprintln!("Error processing session: {}", e);
                 }
             });

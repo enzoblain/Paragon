@@ -6,6 +6,7 @@ use chrono::{
 
 #[derive(Clone)]
 pub struct Session {
+    pub symbol: &'static str,
     pub label: &'static str,
     pub start: DateTime<Utc>,
     pub end: DateTime<Utc>,

@@ -3,6 +3,7 @@
 
 CREATE TABLE sessions (
     id SERIAL PRIMARY KEY,                 -- Unique identifier
+    symbol TEXT NOT NULL,                  -- Trading symbol (e.g., EURUSD)
     label TEXT NOT NULL,                   -- Session label (e.g., Asian, London)
     start_time TIMESTAMPTZ NOT NULL,            -- Start time of the session
     end_time TIMESTAMPTZ NOT NULL,              -- End time of the session
