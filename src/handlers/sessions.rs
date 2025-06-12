@@ -3,13 +3,18 @@ use crate::{
 };
 
 use chrono::{DateTime, NaiveDateTime, Timelike, Utc};
+use dashmap::DashMap;
 use once_cell::sync::Lazy;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 // Store the current session in a global state
-pub static SESSION: Lazy<Mutex<Option<Session>>> = Lazy::new(|| Mutex::new(None));
+pub static SESSION: Lazy<Arc<DashMap<String, Session>>> = Lazy::new(|| {
+    Arc::new(DashMap::new())
+});
 
 pub async fn process_session(candle: Arc<Candle>, symbol: &'static str) -> Result<(), String> {
+    let key = format!("{}-{}", symbol, candle.timerange);
+
     // Check if the session is not initialized 
     // or if the current session is not the same as the candle's session
     // This prevent locking for too long
@@ -36,13 +41,16 @@ pub async fn process_session(candle: Arc<Candle>, symbol: &'static str) -> Resul
         };
 
         // Set the new session in the global state
-        let mut session_guard = SESSION.lock().unwrap();
-        *session_guard = Some(new_session);
+        SESSION.entry(key).and_modify(|e| {
+            *e = new_session.clone();
+        }).or_insert(new_session.clone());
+
     } else {
         // Get the current session
         // We can unwrap here because we checked if the session is Some
-        let mut session_guard = SESSION.lock().unwrap();
-        let current_session = session_guard.as_mut().unwrap();
+        let mut current_session = SESSION.get_mut(&key).ok_or_else(|| {
+            format!("Session not found for key: {}", key)
+        })?;
 
         // Update the current session
         if candle.high > current_session.high {
@@ -63,10 +71,9 @@ pub async fn should_create_new_session(candle: Arc<Candle>) -> bool {
     // Check if the session is not initialized 
     // or if the current session is not the same as the candle's session
     // This prevent locking for too long
-    let session = {
-        let session_guard = SESSION.lock().unwrap();
-        session_guard.clone()
-    };
+    let session = SESSION
+        .get(&format!("{}-{}", candle.symbol, candle.timerange))
+        .map(|e| e.value().clone());
 
     // If the session is not initialized
     if session.is_none() {
