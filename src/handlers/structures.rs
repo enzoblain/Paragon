@@ -1,5 +1,5 @@
 use crate::{
-    connections::{database::add_2_d_structures, websocket::send_message_to_clients}, entities::structures::TwoDStructures, Candle, Timerange
+    connections::{database::add_2_d_structures, websocket::send_message_to_clients}, entities::structures::TwoDStructures, Candle, OneDStructures, Timerange
 };
 
 use dashmap::DashMap;
@@ -18,6 +18,20 @@ pub async fn send_two_d_structure(structure: &TwoDStructures) -> Result<(), Stri
     let mut data = Map::new();
 
     data.insert("type".to_string(), Value::String("Two dimension structure".to_string())); 
+    data.insert("value".to_string(), to_value(structure).unwrap());
+
+    let json_data = Value::Object(data).to_string();
+
+    send_message_to_clients(&json_data).await?;
+
+    Ok(())
+}
+
+// This function sends a OneDStructures entity to all connected clients via WebSocket
+pub async fn send_one_d_structure(structure: &OneDStructures) -> Result<(), String> {
+    let mut data = Map::new();
+
+    data.insert("type".to_string(), Value::String("One dimension structure".to_string())); 
     data.insert("value".to_string(), to_value(structure).unwrap());
 
     let json_data = Value::Object(data).to_string();

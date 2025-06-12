@@ -9,7 +9,15 @@ pub use entities::session::{
     Session,
     SESSIONS
 };
+pub use entities::structures::{
+    OneDStructures,
+    TwoDStructures,
+};
 pub use entities::timerange::{
     Timerange,
     TIMERANGES,
+};
+pub use entities::trend::{
+    Subtrend,
+    Trend
 };

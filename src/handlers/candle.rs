@@ -4,7 +4,10 @@ use crate::{
         database::add_candle,
         websocket::send_message_to_clients,
     },
-    handlers::structures::processfairvaluegap,
+    handlers::{
+        structures::processfairvaluegap,
+        trends::process_trend
+    },
     Timerange,
 };
 
@@ -96,6 +99,9 @@ pub async fn aggregate_candle(candle: Arc<Candle>, symbol: &'static str, timeran
         .entry(key)
         .and_modify(|c| *c = Arc::clone(&new_candle))
         .or_insert_with(|| Arc::clone(&new_candle));
+
+    process_trend(Arc::clone(&new_candle), symbol, timerange.label).await
+        .unwrap_or_else(|e| eprintln!("Failed to process trend: {}", e));
 }
 
 // Sends a candle to the connected WebSocket clients.

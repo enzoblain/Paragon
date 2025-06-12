@@ -3,5 +3,6 @@
 
 pub mod candle;
 pub mod session;
-pub mod timerange;
 pub mod structures;
+pub mod timerange;
+pub mod trend;

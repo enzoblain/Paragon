@@ -1,4 +1,4 @@
-use crate::{Candle, entities::structures::TwoDStructures, Session};
+use crate::{Candle, OneDStructures, Session, Trend, TwoDStructures};
 
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use once_cell::sync::OnceCell;
@@ -86,3 +86,38 @@ pub async fn add_2_d_structures(structure: &TwoDStructures) -> Result<(), String
 
     Ok(())
 } 
+
+pub async fn add_1_d_structures(structure: &OneDStructures) -> Result<(), String> {
+    let client = get_db_client().await?;
+
+    let query = "INSERT INTO one_d_structures (symbol, structure, timerange, timestamp, price, direction) VALUES ($1, $2, $3, $4, $5, $6)";
+    
+    client.query(query, &[
+        &structure.symbol,
+        &structure.structure,
+        &structure.timerange,
+        &structure.timestamp,
+        &structure.price,
+        &structure.direction
+    ]).await.map_err(|e| format!("Failed to insert 1D structure into database: {}", e))?;
+
+    Ok(())
+}
+
+pub async fn add_trends(trend: &Trend) -> Result<(), String> {
+    let client = get_db_client().await?;
+
+    let query = "INSERT INTO trends (symbol, timerange, start_time, end_time, direction, high, low) VALUES ($1, $2, $3, $4, $5, $6, $7)";
+
+    client.query(query, &[
+        &trend.symbol,
+        &trend.timerange,
+        &trend.start_time,
+        &trend.end_time,
+        &trend.direction,
+        &trend.high,
+        &trend.low
+    ]).await.map_err(|e| format!("Failed to insert trend into database: {}", e))?;
+
+    Ok(())
+}

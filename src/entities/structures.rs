@@ -11,3 +11,13 @@ pub struct TwoDStructures {
     pub low: f64,
     pub direction: &'static str,
 }
+
+#[derive(Serialize)]
+pub struct OneDStructures {
+    pub symbol: &'static str,
+    pub structure: &'static str,
+    pub timerange: &'static str,
+    pub timestamp: DateTime<Utc>,
+    pub price: f64,
+    pub direction: &'static str,
+}
